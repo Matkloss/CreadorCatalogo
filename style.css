@@ -1,0 +1,69 @@
+/*
+Este archivo contiene estilos adicionales.
+La mayoría de los estilos (color, espaciado, tipografía)
+se manejan con las clases de Tailwind CSS directamente en index.html.
+*/
+
+/* Aquí puedes agregar cualquier estilo personalizado no relacionado con Tailwind */
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Ejemplo de cómo agregar un efecto de hover más específico si lo necesitas */
+#add-btn:hover {
+    transform: translateY(-2px);
+}
+
+/* Estilo para las tarjetas de producto en el catálogo */
+.product-card {
+    display: flex;
+    flex-direction: column;
+    border-radius: 1rem;
+    overflow: hidden;
+    background-color: #f8fafc;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s ease-in-out;
+}
+
+.product-card:hover {
+    transform: scale(1.02);
+}
+
+.product-card-image {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.product-card-description {
+    padding: 1rem;
+    color: #4b5563;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.message-box {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    z-index: 1000;
+    text-align: center;
+    max-width: 80%;
+}
+
+.message-box-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
