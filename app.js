@@ -5,10 +5,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const context = canvas.getContext('2d');
     const takePhotoButton = document.getElementById('takePhotoButton');
     const uploadInput = document.getElementById('uploadInput');
+    const switchCameraButton = document.getElementById('switchCameraButton'); // Nuevo botón para cambiar de cámara
     const addProductButton = document.getElementById('addProductButton');
     const downloadJsonButton = document.getElementById('downloadJsonButton');
     const downloadPdfButton = document.getElementById('downloadPdfButton');
-    const loadJsonInput = document.getElementById('loadJsonInput'); // Nuevo input para cargar JSON
+    const loadJsonInput = document.getElementById('loadJsonInput');
     const descriptionInput = document.getElementById('descriptionInput');
     const catalogList = document.getElementById('catalogList');
     const messageBox = document.getElementById('messageBox');
@@ -17,6 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let catalogProducts = [];
     let currentImage = null; // Almacena la imagen temporalmente
     let stream = null; // Variable para mantener la referencia al stream de la cámara
+    let cameras = []; // Array para almacenar las cámaras disponibles
+    let currentCameraIndex = 0; // Índice de la cámara actual
 
     // Función para mostrar mensajes al usuario
     const showMessage = (text, type = 'info') => {
@@ -32,19 +35,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 3000);
     };
 
-    // Inicia la cámara y muestra el video
-    async function startCamera() {
+    // Obtiene la lista de cámaras disponibles
+    async function getCameras() {
         try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            cameras = devices.filter(device => device.kind === 'videoinput');
+            if (cameras.length > 1) {
+                // Si hay más de una cámara, muestra el botón de cambio
+                switchCameraButton.style.display = 'block';
+            } else {
+                // Si solo hay una cámara, oculta el botón de cambio
+                switchCameraButton.style.display = 'none';
+            }
+        } catch (err) {
+            console.error('Error al enumerar los dispositivos:', err);
+            switchCameraButton.style.display = 'none';
+        }
+    }
+
+    // Inicia la cámara y muestra el video
+    async function startCamera(deviceId) {
+        // Detiene la cámara actual si existe
+        stopCamera();
+
+        const constraints = {
+            video: {
+                deviceId: deviceId ? { exact: deviceId } : undefined
+            }
+        };
+
+        try {
+            stream = await navigator.mediaDevices.getUserMedia(constraints);
             video.srcObject = stream;
             video.play();
             showMessage('Cámara iniciada. ¡Listo para tomar fotos!', 'success');
+            video.style.display = 'block';
+            canvas.style.display = 'none';
         } catch (err) {
             showMessage('Error al acceder a la cámara. Por favor, asegúrate de dar los permisos necesarios.', 'error');
             console.error('Error al acceder a la cámara:', err);
-            // Si la cámara no está disponible, oculta el video y el botón de tomar foto.
             video.style.display = 'none';
             takePhotoButton.style.display = 'none';
+            switchCameraButton.style.display = 'none';
         }
     }
 
@@ -75,12 +107,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Renderiza la lista completa de productos en la UI
     function renderCatalog() {
         catalogList.innerHTML = ''; // Limpia la lista existente
-        catalogProducts.forEach(product => {
+        catalogProducts.forEach((product, index) => {
             const productCard = document.createElement('div');
-            productCard.className = 'product-card';
+            productCard.className = 'product-card flex justify-between items-center';
             productCard.innerHTML = `
-                <img src="${product.image}" alt="${product.description}" class="mr-4">
-                <p class="text-gray-700">${product.description}</p>
+                <p class="text-gray-700 font-medium">${product.description}</p>
+                <button class="delete-product bg-red-500 text-white font-bold py-2 px-4 rounded-full text-sm hover:bg-red-600 transition duration-300" data-index="${index}">
+                    Eliminar
+                </button>
             `;
             catalogList.appendChild(productCard);
         });
@@ -103,6 +137,13 @@ document.addEventListener('DOMContentLoaded', () => {
         displayImage(canvas.toDataURL('image/png'));
         
         showMessage('Foto tomada. Ahora añade una descripción y agrégala.', 'success');
+    });
+    
+    // Manejador del botón 'Cambiar Cámara'
+    switchCameraButton.addEventListener('click', () => {
+        currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
+        const nextCameraId = cameras[currentCameraIndex].deviceId;
+        startCamera(nextCameraId);
     });
 
     // Manejador del input de subir archivo de imagen
@@ -146,12 +187,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Limpia el formulario y vuelve a mostrar el video
         descriptionInput.value = '';
-        video.style.display = 'block';
-        canvas.style.display = 'none';
         currentImage = null; // Resetea la imagen temporal
         
         // Reinicia la cámara
-        startCamera();
+        startCamera(cameras[currentCameraIndex].deviceId);
         
         showMessage('Producto agregado al catálogo.', 'success');
     });
@@ -178,6 +217,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             };
             reader.readAsText(file);
+        }
+    });
+
+    // Manejador del evento de clic en la lista para eliminar productos
+    catalogList.addEventListener('click', (event) => {
+        if (event.target.classList.contains('delete-product')) {
+            const index = event.target.dataset.index;
+            catalogProducts.splice(index, 1); // Elimina el producto del array
+            renderCatalog(); // Vuelve a renderizar la lista
+            showMessage('Producto eliminado del catálogo.', 'info');
         }
     });
 
@@ -221,7 +270,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const doc = new window.jspdf.jsPDF();
         
         const title = 'Catálogo de Productos';
-        const pageTitle = 'Página';
         const productGap = 10;
         const pageMargin = 20;
 
@@ -234,18 +282,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Itera sobre cada producto para agregarlo al PDF
         catalogProducts.forEach((product) => {
-            // Calcula la altura del producto (imagen + descripción)
-            const imgWidth = 80; // Ancho fijo para la imagen
-            const imgHeight = 80; // Altura fija
-            
+            const img = new Image();
+            img.src = product.image;
+
+            // Define el ancho de la imagen en el PDF
+            const imgWidth = 80;
+
+            // Calcula la altura proporcionalmente para evitar distorsión
+            let imgHeight = (img.height * imgWidth) / img.width;
+
+            // Si la imagen es demasiado grande, la ajusta a la página
+            if (imgHeight > doc.internal.pageSize.getHeight() - pageMargin * 2 - 20) {
+                imgHeight = doc.internal.pageSize.getHeight() - pageMargin * 2 - 20;
+            }
+
             // Si no hay suficiente espacio para el siguiente producto, crea una nueva página
-            if (y + imgHeight + productGap > doc.internal.pageSize.getHeight() - pageMargin) {
+            if (y + imgHeight + productGap + 20 > doc.internal.pageSize.getHeight() - pageMargin) {
                 doc.addPage();
                 y = pageMargin;
             }
 
             // Agrega la imagen
-            doc.addImage(product.image, 'PNG', pageMargin, y, imgWidth, imgHeight);
+            doc.addImage(img, 'PNG', pageMargin, y, imgWidth, imgHeight);
             
             // Agrega la descripción
             doc.setFontSize(12);
@@ -260,5 +318,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Inicia la aplicación al cargar la página
-    startCamera();
+    async function init() {
+        await getCameras();
+        if (cameras.length > 0) {
+            startCamera(cameras[currentCameraIndex].deviceId);
+        } else {
+            showMessage('No se encontraron cámaras. Solo puedes subir fotos.', 'info');
+            video.style.display = 'none';
+            takePhotoButton.style.display = 'none';
+        }
+    }
+
+    init();
 });
