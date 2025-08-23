@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const uploadCsvInput = document.getElementById('uploadCsvInput');
     const downloadCsvTemplateButton = document.getElementById('downloadCsvTemplateButton');
     const productInfoDisplay = document.getElementById('productInfoDisplay');
-    const selectedCodigoDisplay = document.getElementById('selectedCodigo');
+    const selectedCodigoDisplay = document = document.getElementById('selectedCodigo');
     const selectedDescripcionDisplay = document.getElementById('selectedDescripcion');
     const selectedSubgrupoDisplay = document.getElementById('selectedSubgrupo');
 
@@ -91,11 +91,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Muestra una imagen en el canvas
     function displayImage(imgSrc) {
-        stopCamera();
+        // CORRECCIÓN: Se elimina stopCamera() para mantener el flujo de video activo en segundo plano
+        // y evitar errores de reinicio en dispositivos móviles.
         const img = new Image();
         img.onload = () => {
-            canvas.width = img.width;
-            canvas.height = img.height;
+            canvas.width = img.videoWidth;
+            canvas.height = img.videoHeight;
             context.drawImage(img, 0, 0, canvas.width, canvas.height);
             video.style.display = 'none';
             canvas.style.display = 'block';
@@ -149,6 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        // Se llama a displayImage con el canvas como source
         displayImage(canvas.toDataURL('image/png'));
         showMessage('Foto tomada. Ahora selecciona un código y agrégala.', 'success');
     });
@@ -167,6 +169,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const reader = new FileReader();
             reader.onload = (e) => {
                 displayImage(e.target.result);
+                // CORRECCIÓN: Si se sube una imagen, el flujo de video se detiene
+                // ya que no se necesita más.
+                stopCamera();
                 showMessage('Foto subida. Ahora selecciona un código y agrégala.', 'success');
             };
             reader.readAsDataURL(file);
@@ -230,7 +235,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Actualiza el select de códigos después de agregar un producto
         fillCodigoSelect();
         
-        startCamera(cameras[currentCameraIndex].deviceId);
+        // CORRECCIÓN: En lugar de reiniciar la cámara, solo se muestra el video de nuevo
+        // para que el usuario pueda tomar otra foto.
+        video.style.display = 'block';
+        canvas.style.display = 'none';
+
         showMessage('Producto agregado al catálogo.', 'success');
     });
 
