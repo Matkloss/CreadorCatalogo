@@ -40,9 +40,25 @@
                 <i class="fas fa-sync-alt mr-2"></i>Cambiar Cámara
             </button>
             
-            <input type="text" id="descriptionInput" placeholder="Descripción del producto..." class="flex-1 p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-300">
+            <!-- Menú desplegable para códigos -->
+            <select id="codigoSelect" class="flex-1 p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-300">
+                <option value="">Selecciona un código...</option>
+            </select>
+            
+            <!-- Eliminar el campo de entrada de descripción para que solo se use el CSV -->
+            <!-- <input type="text" id="descriptionInput" placeholder="Descripción del producto..." class="flex-1 p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-300"> -->
             <button id="addProductButton" class="bg-green-600 text-white font-bold py-3 px-6 rounded-xl shadow-md hover:bg-green-700 transition duration-300 w-full md:w-auto">
                 Agregar Producto
+            </button>
+        </div>
+        
+        <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 mt-6">
+            <label for="uploadCsvInput" class="bg-blue-500 text-white font-bold py-3 px-6 rounded-xl shadow-md hover:bg-blue-600 transition duration-300 cursor-pointer flex-1 text-center">
+                Cargar CSV
+            </label>
+            <input type="file" id="uploadCsvInput" accept=".csv" class="hidden">
+            <button id="downloadCsvTemplateButton" class="bg-blue-400 text-white font-bold py-3 px-6 rounded-xl shadow-md hover:bg-blue-500 transition duration-300 flex-1">
+                Descargar Plantilla CSV
             </button>
         </div>
 
@@ -55,7 +71,7 @@
                 <!-- Los productos agregados se mostrarán aquí -->
             </div>
             <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 mt-6">
-                <!-- Nuevo botón para cargar el JSON -->
+                <!-- Botones de descarga existentes -->
                 <label for="loadJsonInput" class="bg-gray-600 text-white font-bold py-3 px-6 rounded-xl shadow-md hover:bg-gray-700 transition duration-300 cursor-pointer flex-1 text-center">
                     Cargar JSON
                 </label>
@@ -74,3 +90,5 @@
     <script src="app.js"></script>
 </body>
 </html>
+</html>
+
